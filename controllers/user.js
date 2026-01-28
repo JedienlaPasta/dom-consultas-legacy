@@ -39,7 +39,6 @@ export const userAuth = async (req, res) => {
         httpOnly: true,
         maxAge: 60 * 60 * 1000 * 6,
       });
-      console.log("user:", user);
       res.json({
         message: "Signed in successfully",
         isAuthenticated: true,
@@ -56,7 +55,7 @@ export const userAuth = async (req, res) => {
 
 export const getUser = async (req, res) => {
   const id = req.id;
-  const user = await User.findOne({ id }).select("-password");
+  const user = await User.findOne({ _id: id }).select("-password");
   res.json({ user });
 };
 
@@ -71,14 +70,17 @@ export const clearUser = async (req, res) => {
 
 export const isAuth = async (req, res) => {
   try {
-    const { id } = req.id;
+    const id = req.id;
     const user = await User.findOne({ _id: id });
-    res
-      .status(200)
-      .json({
-        isAuthenticated: true,
-        user: { name: user.name, role: user.role },
-      });
+
+    if (!user) {
+      return res.status(401).json({ isAuthenticated: false });
+    }
+
+    res.status(200).json({
+      isAuthenticated: true,
+      user: { name: user.name, role: user.role },
+    });
   } catch (error) {
     res.json({ message: error });
   }
