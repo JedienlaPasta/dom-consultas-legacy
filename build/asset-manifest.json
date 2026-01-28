@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/static/css/main.6db25341.css",
+    "main.js": "/static/js/main.17f9a93f.js",
+    "static/media/algarrobo.png": "/static/media/algarrobo.5e3fdc3839475528df7c.png",
+    "index.html": "/index.html",
+    "main.6db25341.css.map": "/static/css/main.6db25341.css.map",
+    "main.17f9a93f.js.map": "/static/js/main.17f9a93f.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.6db25341.css",
+    "static/js/main.17f9a93f.js"
+  ]
+}
