@@ -19,9 +19,6 @@ import logsRouter from "./routes/logs.js";
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-// export const filePath = __dirname+'/client/public/exportdata.xlsx'
-// export const filePath = __dirname+'/tmp/exportdata.xlsx'
-export const filePath = "/tmp/exportdata.xlsx";
 dotenv.config();
 
 app.use(helmet());
@@ -40,24 +37,21 @@ app.use(cookieParser());
 
 app.use(cors());
 
-app.use(express.static("build"));
+app.use(express.static("dist"));
 
 app.use("/roles", rolesRoutes);
 app.use("/perm", permisosRoutes);
 app.use("/users", userRoutes);
 app.use("/logs", logsRouter);
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+app.get(/(.*)/, (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 const PORT = process.env.PORT || 5000;
 
 mongoose
-  .connect(process.env.CONNECTION_URL || CONNECTION_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.CONNECTION_URL || CONNECTION_URL)
   .then(() =>
     app.listen(PORT, () => console.log(`Server running on port: ${PORT}`)),
   )
