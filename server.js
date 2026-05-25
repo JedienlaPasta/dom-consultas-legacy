@@ -37,7 +37,7 @@ app.use(cookieParser());
 
 app.use(cors());
 
-app.use(express.static("build"));
+app.use(express.static("dist"));
 
 app.use("/roles", rolesRoutes);
 app.use("/perm", permisosRoutes);
@@ -45,7 +45,7 @@ app.use("/users", userRoutes);
 app.use("/logs", logsRouter);
 
 app.get(/(.*)/, (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 const PORT = process.env.PORT || 5000;
