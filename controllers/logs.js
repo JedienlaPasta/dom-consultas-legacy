@@ -1,51 +1,59 @@
 import LogPermiso from "../models/logPermiso.js"
 import Log from "../models/logs.js"
 import Permiso from "../models/permisosModel.js"
-import ObjectId from 'mongodb'
+import mongoose from 'mongoose'
 
-const objId = ObjectId.ObjectId
+const objId = (hex24) => new mongoose.Types.ObjectId(String(hex24).padStart(24, '0'))
 
 // Para consultar logs guardados
 export const getLogs = async (req, res) => {
-    // console.log(req.query)
     const option = req.query?.option
     const date = req.query?.date
     const id = req.query?.id
-    const rol = req.query?.rol
+    const rolMz = req.query?.['rol[mz]']
+    const rolPd = req.query?.['rol[pd]']
     let logs = []
     
     try {
+        // Busqueda por Fecha
         if (option === 'fecha' && date !== '') {
-            // Start date
-            let start = new Date(date)
-            start.setDate(start.getDate() + 1)
-            start.setHours(0,0,0,0)
-            start = objId(Math.floor(start.getTime() / 1000).toString(16) + "0000000000000000")
-            // End date
-            let end = new Date(date)
-            end.setDate(end.getDate() + 1)
-            end.setHours(23,59,59,999)
-            end = objId(Math.floor(end.getTime() / 1000).toString(16) + "0000000000000000")
+            // Fecha YYYY-MM-DD enviada por el frontend = DÍA EN HORA LOCAL (Chile)
+            const [y, m, d] = date.split('-').map(Number)
             
-            logs = await Log.find({ _id: { $gt: start, $lt: end } }).sort([['_id', -1]])
+            // ▶ Start: 00:00:00 HORA LOCAL del día seleccionado
+            const startDate = new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0)
+            const startTs = Math.floor(startDate.getTime() / 1000) // getTime() ya devuelve UTC
+            const start = objId(startTs.toString(16).padStart(8, '0') + "0000000000000000")
+            
+            // ▶ End: 00:00:00 HORA LOCAL del DÍA SIGUIENTE (rango [start, end) cierra por la derecha)
+            const endDate = new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0)
+            endDate.setDate(endDate.getDate() + 1)
+            const endTs = Math.floor(endDate.getTime() / 1000)
+            const end = objId(endTs.toString(16).padStart(8, '0') + "0000000000000000")
+            
+            logs = await Log.find({ _id: { $gte: start, $lt: end } }).sort([['_id', -1]])
         }
         else if (option === 'id' && id !== '') {
-            logs = await Log.find({ permisoId: objId(id) }).sort([['_id', -1]])
+            logs = await Log.find({ permisoId: id }).sort([['_id', -1]])
         }
-        else if (option === 'rol' && rol !== { mz: '', pd: '' }) {
-            if (rol.mz !== '' && rol.pd !== '' ) {
-                logs = await Log.find({ matriz: rol.mz, digito: rol.pd }).sort([['_id', -1]])
+        // Busqueda por Rol
+        else if (option === 'rol' && (rolMz !== '' || rolPd !== '')) {
+            if (rolMz !== '' && rolPd !== '' ) {
+                logs = await Log.find({ matriz: rolMz, digito: rolPd }).sort([['_id', -1]])
             }
-            else if (rol.mz !== '' ) {
-                logs = await Log.find({ matriz: rol.mz }).sort([['_id', -1]])
+            else if (rolMz !== '' ) {
+                logs = await Log.find({ matriz: rolMz }).sort([['_id', -1]])
             }
         }
+        // Busqueda por ID
         else {
             logs = await Log.find().sort([['_id', -1]])
         }
     } catch (error) {
+        console.error("\n[getLogs] ERROR en la query:", error?.message || error)
+        console.error("  Stack:", error?.stack)
         if (!logs.length) {
-            return res.status(404).json({ message: 'No se encontraron registros' })
+            return res.status(500).json({ message: 'Error al buscar registros', error: error?.message || String(error) })
         }
     }
     if (!logs.length) {
